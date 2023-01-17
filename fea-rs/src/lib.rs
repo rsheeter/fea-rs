@@ -14,6 +14,9 @@ mod tests;
 
 pub use compile::Compilation;
 pub use diagnostic::{Diagnostic, Level};
-pub use parse::{parse_root_file, parse_src, FileId, ParseTree, Source, TokenSet};
+pub use parse::{
+    parse_from_memory, parse_root_file, parse_src, FileId, ParseContext, ParseTree, Source,
+    TokenSet,
+};
 pub use token_tree::{typed, Kind, Node, NodeOrToken, Token};
 pub use types::{GlyphIdent, GlyphMap, GlyphName};

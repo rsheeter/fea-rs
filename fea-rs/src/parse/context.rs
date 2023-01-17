@@ -1,6 +1,7 @@
 //! parsing and resolving includes
 
 use std::collections::{HashMap, HashSet};
+use std::io;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 
@@ -115,6 +116,40 @@ impl IncludeStatement {
 }
 
 impl ParseContext {
+    /// Attempt to parse the feature content provided.
+    ///
+    /// This will only error in unrecoverable cases, such as if feature content
+    /// has include statements.
+    ///
+    /// After parsing, you can call [`generate_parse_tree`] in order to generate
+    /// a unified parse tree suitable for compilation.
+    ///
+    /// [`generate_parse_tree`]: ParseContext::generate_parse_tree
+    pub fn parse_from_memory(
+        fea_content: &String,
+        glyph_map: Option<&GlyphMap>,
+    ) -> Result<Self, HardError> {
+        let root = Source::from_text(fea_content.to_owned());
+        let (node, errors, include_stmts) = parse_src(&root, glyph_map);
+        if !include_stmts.is_empty() {
+            return Err(HardError::IoError {
+                path: include_stmts[0].path().into(),
+                cause: io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "Include resolution not implemented for in-memory compiles",
+                ),
+            });
+        }
+        let sources = SourceList::new(root, None);
+        let mut parsed_files = HashMap::new();        
+        parsed_files.insert(sources.root_id(), (node, errors));
+        Ok(ParseContext {
+            sources,
+            parsed_files,
+            graph: IncludeGraph::default(),
+        })
+    }
+
     /// Attempt to parse the feature file at `path` and any includes.
     ///
     /// This will only error in unrecoverable cases, such as if `path` cannot
@@ -187,10 +222,12 @@ impl ParseContext {
         })
     }
 
+    /// Who started this anyway?
     pub fn root_id(&self) -> FileId {
         self.sources.root_id()
     }
 
+    /// You probably shouldn't touch.
     pub fn get_raw(&self, file: FileId) -> Option<&(Node, Vec<Diagnostic>)> {
         self.parsed_files.get(&file)
     }
