@@ -27,3 +27,11 @@ pub fn parse_root_file(
 ) -> Result<ParseContext, HardError> {
     ParseContext::parse_from_root(path.into(), glyph_map, project_root)
 }
+
+/// Attempt to parse a feature file at a given path, including its imports.
+pub fn parse_from_memory(
+    fea_content: &String,
+    glyph_map: Option<&GlyphMap>,
+) -> Result<ParseContext, HardError> {
+    ParseContext::parse_from_memory(fea_content, glyph_map)
+}
